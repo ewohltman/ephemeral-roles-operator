@@ -1,6 +1,6 @@
 pub mod deployer;
+pub mod ephemeral_roles;
 pub mod handler;
-pub mod version;
 
-/// Generated type, for crdgen
-pub use version::ERVersion;
+pub use ephemeral_roles::ERVersion;
+pub use handler::handle;

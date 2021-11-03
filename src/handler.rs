@@ -1,55 +1,28 @@
-use crate::deployer;
-use kube::{
-    api::{Resource, ResourceExt},
-    runtime::watcher::Event,
-    Client,
-};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::{fmt::Debug, hash::Hash};
+use crate::{deployer, ephemeral_roles};
+use kube::{api::ResourceExt, runtime::watcher::Event, Client};
 
-pub async fn handle_resource<T>(conn_client: Client, watch_event: Event<T>)
-where
-    T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
-    T::DynamicType: Eq + Hash + Clone + Default,
-{
+pub async fn handle(conn_client: Client, watch_event: Event<ephemeral_roles::ERVersion>) {
     match watch_event {
-        Event::Applied(object) => handle_created(conn_client, object).await,
-        Event::Deleted(object) => handle_deleted(conn_client, object).await,
+        Event::Applied(er_version) => handle_created(conn_client, er_version).await,
+        Event::Deleted(er_version) => handle_deleted(conn_client, er_version).await,
         Event::Restarted(_) => println!("Resource watcher started"),
     }
 }
 
-pub async fn handle_created<T>(conn_client: Client, version: T)
-where
-    T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
-{
-    println!("ERVersion applied: {}", version.name());
+pub async fn handle_created(conn_client: Client, er_version: ephemeral_roles::ERVersion) {
+    println!("ERVersion applied: {}", er_version.name());
 
-    match deployer::create_object(conn_client).await {
-        Ok(object) => println!(
-            "Object created: {}/{}",
-            object.namespace().unwrap_or_else(|| "unknown".to_string()),
-            object.name()
-        ),
-        Err(err) => println!("Error creating object: {:?}", err),
+    match deployer::deploy(conn_client, er_version.name().as_str()).await {
+        Ok(_) => println!("ERVersion {} deployed successfully", er_version.name()),
+        Err(err) => println!("Error deploying ERVersion {}: {:?}", er_version.name(), err),
     }
 }
 
-pub async fn handle_deleted<T>(conn_client: Client, version: T)
-where
-    T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
-{
-    println!("ERVersion deleted: {}", version.name());
+pub async fn handle_deleted(conn_client: Client, er_version: ephemeral_roles::ERVersion) {
+    println!("ERVersion deleted: {}", er_version.name());
 
-    match deployer::delete_object(conn_client).await {
-        Ok(object) => println!(
-            "Object deleted: {}/{}",
-            object.namespace().unwrap_or_else(|| "unknown".to_string()),
-            object.name(),
-        ),
-        Err(err) => {
-            println!("Error deleting object: {:?}", err);
-        }
+    match deployer::remove(conn_client).await {
+        Ok(_) => println!("ERVersion {} removed successfully", er_version.name()),
+        Err(err) => println!("Error removing ERVersion {}: {:?}", er_version.name(), err),
     }
 }
