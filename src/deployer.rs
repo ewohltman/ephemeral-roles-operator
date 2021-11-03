@@ -9,17 +9,15 @@ const NAMESPACE: &str = "ephemeral-roles";
 pub async fn create_object(conn_client: Client) -> Result<ConfigMap, kube::Error> {
     let client: Api<ConfigMap> = Api::namespaced(conn_client, NAMESPACE);
 
-    let mut metadata: ObjectMeta = Default::default();
-    metadata.name = Some(TEST_OBJECT.to_string());
-
     client
         .create(
             &PostParams::default(),
             &ConfigMap {
-                metadata,
-                data: None,
-                binary_data: None,
-                immutable: None,
+                metadata: ObjectMeta {
+                    name: Some(TEST_OBJECT.to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
             },
         )
         .await

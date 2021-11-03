@@ -29,7 +29,7 @@ where
     match deployer::create_object(conn_client).await {
         Ok(object) => println!(
             "Object created: {}/{}",
-            object.namespace().unwrap_or("unknown".to_string()),
+            object.namespace().unwrap_or_else(|| "unknown".to_string()),
             object.name()
         ),
         Err(err) => println!("Error creating object: {:?}", err),
@@ -45,12 +45,11 @@ where
     match deployer::delete_object(conn_client).await {
         Ok(object) => println!(
             "Object deleted: {}/{}",
-            object.namespace().unwrap_or("unknown".to_string()),
-            object.name()
+            object.namespace().unwrap_or_else(|| "unknown".to_string()),
+            object.name(),
         ),
         Err(err) => {
             println!("Error deleting object: {:?}", err);
-            return;
         }
     }
 }
