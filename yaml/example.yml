@@ -1,0 +1,7 @@
+---
+apiVersion: ephemeral-roles.net/v1
+kind: Version
+metadata:
+  name: "v1.9.0"
+spec:
+  version: "v1.9.0"

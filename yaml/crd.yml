@@ -1,0 +1,45 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: versions.ephemeral-roles.net
+spec:
+  group: ephemeral-roles.net
+  names:
+    categories: []
+    kind: Version
+    plural: versions
+    shortNames: []
+    singular: version
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns: []
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: "Auto-generated derived type for VersionSpec via `CustomResource`"
+          properties:
+            spec:
+              description: Ephemeral Roles Version resource spec
+              properties:
+                version:
+                  type: string
+              required:
+                - version
+              type: object
+            status:
+              nullable: true
+              properties:
+                is_deployed:
+                  type: boolean
+              required:
+                - is_deployed
+              type: object
+          required:
+            - spec
+          title: Version
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
