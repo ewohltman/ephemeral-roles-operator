@@ -13,6 +13,9 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::{error, fmt::Debug, hash::Hash};
 
+const TEST_OBJECT: &str = "test-object";
+const NAMESPACE: &str = "ephemeral-roles";
+
 async fn manage<T, K>(
     conn_client: Client,
     resource_client: Api<T>,
@@ -47,7 +50,7 @@ where
     match watch_event {
         Event::Applied(object) => handle_created(conn_client, object).await,
         Event::Deleted(object) => handle_deleted(conn_client, object).await,
-        Event::Restarted(_) => handle_restarted(conn_client).await,
+        Event::Restarted(_) => println!("Resource watcher started"),
     }
 }
 
@@ -55,13 +58,30 @@ async fn handle_created<T>(conn_client: Client, object: T)
 where
     T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
 {
-    let name = object.name();
-    let namespace = object.namespace().unwrap_or_else(|| "unknown".to_string());
+    println!("Version applied: {}", object.name());
 
-    println!("Resource applied: {}/{}", namespace, name,);
+    match create_object(conn_client).await {
+        Ok(object) => println!(
+            "Object created: {}/{}",
+            object.namespace().unwrap_or("unknown".to_string()),
+            object.name()
+        ),
+        Err(err) => println!("Error creating object: {:?}", err),
+    }
+}
 
-    match delete_object(conn_client, name.as_str(), namespace.as_str()).await {
-        Ok(_) => {}
+async fn handle_deleted<T>(conn_client: Client, object: T)
+where
+    T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
+{
+    println!("Version deleted: {}", object.name());
+
+    match delete_object(conn_client).await {
+        Ok(object) => println!(
+            "Object deleted: {}/{}",
+            object.namespace().unwrap_or("unknown".to_string()),
+            object.name()
+        ),
         Err(err) => {
             println!("Error deleting object: {:?}", err);
             return;
@@ -69,61 +89,11 @@ where
     }
 }
 
-async fn handle_deleted<T>(_conn_client: Client, object: T)
-where
-    T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
-{
-    let name = object.name();
-    let namespace = object.namespace().unwrap_or_else(|| "unknown".to_string());
-
-    println!("Resource deleted: {}/{}", namespace, name);
-}
-
-async fn handle_restarted(conn_client: Client) {
-    println!("Resource watcher started");
-
-    match create_object(conn_client.clone(), "test-object", "default").await {
-        Ok(_) => {}
-        Err(err) => {
-            match err {
-                kube::Error::Api(err) => {
-                    if err.code == 409 {
-                        match delete_object(conn_client.clone(), "test-object", "default").await {
-                            Ok(_) => {}
-                            Err(err) => {
-                                println!("Error deleting object: {:?}", err);
-                                return;
-                            }
-                        }
-
-                        match create_object(conn_client, "test-object", "default").await {
-                            Ok(_) => {}
-                            Err(err) => {
-                                println!("Error creating object: {:?}", err);
-                                return;
-                            }
-                        }
-                    }
-                }
-                _ => {
-                    println!("Error creating object: {:?}", err);
-                }
-            }
-
-            return;
-        }
-    }
-}
-
-async fn create_object(
-    conn_client: Client,
-    name: &str,
-    namespace: &str,
-) -> Result<(), kube::Error> {
-    let client: Api<ConfigMap> = Api::namespaced(conn_client, namespace);
+async fn create_object(conn_client: Client) -> Result<ConfigMap, kube::Error> {
+    let client: Api<ConfigMap> = Api::namespaced(conn_client, NAMESPACE);
 
     let mut metadata: ObjectMeta = Default::default();
-    metadata.name = Some(name.to_string());
+    metadata.name = Some(TEST_OBJECT.to_string());
 
     client
         .create(
@@ -135,20 +105,16 @@ async fn create_object(
                 immutable: None,
             },
         )
-        .await?;
-
-    Ok(())
+        .await
 }
 
-async fn delete_object(
-    conn_client: Client,
-    name: &str,
-    namespace: &str,
-) -> Result<(), kube::Error> {
-    let client: Api<ConfigMap> = Api::namespaced(conn_client, namespace);
+async fn delete_object(conn_client: Client) -> Result<ConfigMap, kube::Error> {
+    let client: Api<ConfigMap> = Api::namespaced(conn_client, NAMESPACE);
+
+    let object = client.get(TEST_OBJECT).await?;
 
     client
-        .delete(name, &DeleteParams::default())
+        .delete(TEST_OBJECT, &DeleteParams::default())
         .await?
         .map_left(|_| {
             // Object deleting
@@ -157,7 +123,7 @@ async fn delete_object(
             // Object deleted
         });
 
-    Ok(())
+    Ok(object)
 }
 
 #[tokio::main]
@@ -165,7 +131,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     println!("Started ephemeral-roles-operator");
 
     let conn_client = Client::try_default().await?;
-    let resource_client: Api<ConfigMap> = Api::default_namespaced(conn_client.clone());
+    let resource_client: Api<controller::Version> = Api::all(conn_client.clone());
     let join_handle =
         tokio::spawn(async move { manage(conn_client, resource_client, resource_handler).await });
 

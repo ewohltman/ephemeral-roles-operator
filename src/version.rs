@@ -4,15 +4,9 @@ use serde::{Deserialize, Serialize};
 
 /// Ephemeral Roles Version resource spec
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
-#[kube(
-    kind = "Version",
-    group = "ephemeral-roles.net",
-    version = "v1",
-    namespaced
-)]
+#[kube(kind = "Version", group = "ephemeral-roles.net", version = "v1")]
 #[kube(status = "VersionStatus")]
 pub struct VersionSpec {
-    name: String,
     version: String,
 }
 
