@@ -22,18 +22,10 @@ spec:
             spec:
               description: Ephemeral Roles Version resource spec
               properties:
-                version:
-                  type: string
-              required:
-                - version
-              type: object
-            status:
-              nullable: true
-              properties:
-                is_deployed:
+                enabled:
                   type: boolean
               required:
-                - is_deployed
+                - enabled
               type: object
           required:
             - spec
@@ -41,5 +33,4 @@ spec:
           type: object
       served: true
       storage: true
-      subresources:
-        status: {}
+      subresources: {}

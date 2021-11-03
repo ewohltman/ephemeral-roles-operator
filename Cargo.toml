@@ -6,7 +6,7 @@ license = "MIT License"
 
 [[bin]]
 doc = false
-name = "ephemeral_roles_operator"
+name = "ephemeral-roles-operator"
 path = "src/main.rs"
 
 [[bin]]
