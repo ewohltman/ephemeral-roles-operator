@@ -1,0 +1,29 @@
+[package]
+name = "ephemeral-roles-operator"
+version = "0.1.0"
+edition = "2021"
+license = "MIT License"
+
+[[bin]]
+doc = false
+name = "ephemeral_roles_operator"
+path = "src/main.rs"
+
+[[bin]]
+doc = false
+name = "crdgen"
+path = "src/crdgen.rs"
+
+[lib]
+name = "controller"
+path = "src/lib.rs"
+
+[dependencies]
+kube = { version = "0.63.2", features = ["runtime","derive"] }
+k8s-openapi = { version = "0.13.1", default-features = false, features = ["v1_21"] }
+tokio = { version = "1.13.0", features = ["full"] }
+futures = "0.3"
+serde = "1.0.130"
+schemars = { version = "0.8.3", features = ["chrono"] }
+serde_json = "1.0.67"
+serde_yaml = "0.8.21"
