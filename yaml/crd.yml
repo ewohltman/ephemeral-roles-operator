@@ -20,7 +20,7 @@ spec:
           description: "Auto-generated derived type for ERVersionSpec via `CustomResource`"
           properties:
             spec:
-              description: Ephemeral Roles Version resource spec
+              description: ERVersion resource spec
               properties:
                 enabled:
                   type: boolean
