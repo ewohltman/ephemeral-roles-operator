@@ -15,8 +15,8 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     let conn_client = Client::try_default().await?;
 
     tokio::spawn(async move {
-        let store = reflector::store::Writer::<controller::Version>::default();
-        let resource_client: Api<controller::Version> = Api::all(conn_client.clone());
+        let store = reflector::store::Writer::<controller::ERVersion>::default();
+        let resource_client: Api<controller::ERVersion> = Api::all(conn_client.clone());
 
         match reflector(store, watcher(resource_client, ListParams::default()))
             .try_for_each(|watch_event| async {
