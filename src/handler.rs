@@ -24,7 +24,7 @@ pub async fn handle_created<T>(conn_client: Client, version: T)
 where
     T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
 {
-    println!("Version applied: {}", version.name());
+    println!("ERVersion applied: {}", version.name());
 
     match deployer::create_object(conn_client).await {
         Ok(object) => println!(
@@ -40,7 +40,7 @@ pub async fn handle_deleted<T>(conn_client: Client, version: T)
 where
     T: Resource + ResourceExt + Serialize + DeserializeOwned + Clone + Debug + Send + 'static,
 {
-    println!("Version deleted: {}", version.name());
+    println!("ERVersion deleted: {}", version.name());
 
     match deployer::delete_object(conn_client).await {
         Ok(object) => println!(
