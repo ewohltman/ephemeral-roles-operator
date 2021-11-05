@@ -24,7 +24,7 @@ pub async fn deploy(conn_client: Client, version: &str) -> Result<(), kube::Erro
     Ok(())
 }
 
-pub async fn remove(conn_client: Client) -> Result<(), kube::Error> {
+pub async fn remove(conn_client: Client, _version: &str) -> Result<(), kube::Error> {
     let client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
     let params = &DeleteParams::default();
 

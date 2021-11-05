@@ -4,4 +4,4 @@ kind: ERVersion
 metadata:
   name: "v1.9.0"
 spec:
-  enabled: true
+  replicas: 10

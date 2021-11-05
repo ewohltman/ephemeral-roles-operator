@@ -2,9 +2,22 @@ use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// ERVersion resource spec
-#[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
-#[kube(kind = "ERVersion", group = "ephemeral-roles.net", version = "v1")]
+/// ERVersion spec
+#[derive(CustomResource, Default, PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[kube(
+    group = "ephemeral-roles.net",
+    version = "v1",
+    kind = "ERVersion",
+    plural = "erversions",
+    shortname = "erv",
+    derive = "PartialEq",
+    derive = "Default",
+    status = "ERVersionStatus"
+)]
 pub struct ERVersionSpec {
-    enabled: bool,
+    replicas: u8,
 }
+
+/// ERVersion status
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct ERVersionStatus {}

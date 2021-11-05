@@ -9,7 +9,8 @@ spec:
     categories: []
     kind: ERVersion
     plural: erversions
-    shortNames: []
+    shortNames:
+      - erv
     singular: erversion
   scope: Cluster
   versions:
@@ -20,12 +21,18 @@ spec:
           description: "Auto-generated derived type for ERVersionSpec via `CustomResource`"
           properties:
             spec:
-              description: ERVersion resource spec
+              description: ERVersion spec
               properties:
-                enabled:
-                  type: boolean
+                replicas:
+                  format: uint8
+                  minimum: 0.0
+                  type: integer
               required:
-                - enabled
+                - replicas
+              type: object
+            status:
+              description: ERVersion status
+              nullable: true
               type: object
           required:
             - spec
@@ -33,4 +40,5 @@ spec:
           type: object
       served: true
       storage: true
-      subresources: {}
+      subresources:
+        status: {}
