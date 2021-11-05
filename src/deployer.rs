@@ -1,34 +1,37 @@
-use k8s_openapi::api::{
-    apps::v1::{StatefulSet, StatefulSetSpec},
-    core::v1::{
-        Container, ContainerPort, EnvVar, EnvVarSource, ObjectFieldSelector, PodSpec,
-        PodTemplateSpec, ResourceRequirements, SecretKeySelector,
+use k8s_openapi::{
+    api::{
+        apps::v1::{StatefulSet, StatefulSetSpec},
+        core::v1::{
+            Container, ContainerPort, EnvVar, EnvVarSource, ObjectFieldSelector, PodSpec,
+            PodTemplateSpec, ResourceRequirements, SecretKeySelector,
+        },
     },
+    apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector},
 };
-use k8s_openapi::apimachinery::pkg::{api::resource::Quantity, apis::meta::v1::LabelSelector};
-use kube::core::params::{DeleteParams, PostParams};
-use kube::core::ObjectMeta;
-use kube::{api::Api, Client};
-use std::array::IntoIter;
-use std::collections::BTreeMap;
+use kube::{
+    api::Api,
+    core::params::{DeleteParams, PostParams},
+    core::ObjectMeta,
+    Client,
+};
+use std::{array::IntoIter, collections::BTreeMap, error};
 
-const TEST_OBJECT: &str = "test-object";
 const NAMESPACE: &str = "ephemeral-roles";
 
-pub async fn deploy(conn_client: Client, version: &str) -> Result<(), kube::Error> {
-    let client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
-    let params = &PostParams::default();
+pub async fn deploy(conn_client: Client, version: &str) -> Result<(), Box<dyn error::Error>> {
+    let _client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
+    let _params = &PostParams::default();
 
-    client.create(params, &statefulset(version)).await?;
+    // client.create(params, &statefulset(version)).await?;
 
     Ok(())
 }
 
-pub async fn remove(conn_client: Client, _version: &str) -> Result<(), kube::Error> {
-    let client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
-    let params = &DeleteParams::default();
+pub async fn remove(conn_client: Client, _version: &str) -> Result<(), Box<dyn error::Error>> {
+    let _client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
+    let _params = &DeleteParams::default();
 
-    client.delete(TEST_OBJECT, params).await?;
+    // client.delete(TEST_OBJECT, params).await?;
 
     Ok(())
 }
