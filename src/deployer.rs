@@ -18,7 +18,7 @@ use std::{array::IntoIter, collections::BTreeMap, error};
 
 const NAMESPACE: &str = "ephemeral-roles";
 
-pub async fn deploy(conn_client: Client, version: &str) -> Result<(), Box<dyn error::Error>> {
+pub async fn deploy(conn_client: Client, _version: &str) -> Result<(), Box<dyn error::Error>> {
     let _client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
     let _params = &PostParams::default();
 
