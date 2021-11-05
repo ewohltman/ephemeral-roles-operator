@@ -31,7 +31,7 @@ pub async fn remove(conn_client: Client, _version: &str) -> Result<(), Box<dyn e
     let _client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
     let _params = &DeleteParams::default();
 
-    // client.delete(TEST_OBJECT, params).await?;
+    // client.delete("ephemeral-roles".to_string(), params).await?;
 
     Ok(())
 }
@@ -44,7 +44,7 @@ fn statefulset(version: &str) -> StatefulSet {
 
     StatefulSet {
         metadata: ObjectMeta {
-            name: Some(TEST_OBJECT.to_string()),
+            name: Some("ephemeral-roles".to_string()),
             ..Default::default()
         },
         spec: Option::from(StatefulSetSpec {
