@@ -1,6 +1,7 @@
 use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// ERVersion spec
 #[derive(CustomResource, Default, PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -15,7 +16,14 @@ use serde::{Deserialize, Serialize};
     status = "ERVersionStatus"
 )]
 pub struct ERVersionSpec {
-    replicas: u8,
+    pub replicas: u8,
+    pub components: HashMap<String, Component>,
+}
+
+#[derive(Default, PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct Component {
+    pub version: String,
+    pub files: Vec<String>,
 }
 
 /// ERVersion status

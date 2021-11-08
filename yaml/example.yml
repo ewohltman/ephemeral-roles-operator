@@ -5,3 +5,9 @@ metadata:
   name: "v1.9.0"
 spec:
   replicas: 10
+  components:
+    test:
+      version: ""
+      files:
+        - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/namespace.yml"
+        - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/service.yml"

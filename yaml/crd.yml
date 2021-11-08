@@ -23,11 +23,26 @@ spec:
             spec:
               description: ERVersion spec
               properties:
+                components:
+                  additionalProperties:
+                    properties:
+                      files:
+                        items:
+                          type: string
+                        type: array
+                      version:
+                        type: string
+                    required:
+                      - files
+                      - version
+                    type: object
+                  type: object
                 replicas:
                   format: uint8
                   minimum: 0.0
                   type: integer
               required:
+                - components
                 - replicas
               type: object
             status:
