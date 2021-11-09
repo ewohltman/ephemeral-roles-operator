@@ -16,7 +16,6 @@ use std::collections::HashMap;
     status = "ERVersionStatus"
 )]
 pub struct ERVersionSpec {
-    pub replicas: u8,
     pub components: HashMap<String, Component>,
 }
 

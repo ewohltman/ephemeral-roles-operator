@@ -1,8 +1,7 @@
 use crate::ephemeral_roles;
-// use kube::core::object::HasSpec;
-use kube::core::params::PostParams;
+use kube::core::params::{Patch, PatchParams, PostParams};
 use kube::core::{ApiResource, DynamicObject, GroupVersion, GroupVersionKind, TypeMeta};
-use kube::{Api, Client, ResourceExt};
+use kube::{Api, Client, Resource, ResourceExt};
 use std::error;
 use std::fmt;
 use std::fmt::Debug;
@@ -25,18 +24,13 @@ pub async fn deploy(
     conn_client: Client,
     er_version: ephemeral_roles::ERVersion,
 ) -> Result<(), Box<dyn error::Error>> {
-    for (_name, component) in er_version.spec.components.iter() {
+    for (component_name, component) in er_version.spec.components.iter() {
         for file in component.files.iter() {
             let resp = reqwest::get(file).await?.text().await?;
             let object: DynamicObject = serde_yaml::from_str(resp.as_str())?;
-            let client = api_client(conn_client.clone(), object.clone())?;
-            let params = &PostParams::default();
+            let client = api_client(conn_client.clone(), &object)?;
 
-            println!("Apply: {}", object.clone().types.unwrap().kind);
-
-            if let Err(err) = client.create(params, &object).await {
-                println!("Error: {:?}", err);
-            }
+            apply(client, component_name, object).await?;
         }
     }
 
@@ -44,23 +38,22 @@ pub async fn deploy(
 }
 
 pub async fn remove(_conn_client: Client, _version: &str) -> Result<(), Box<dyn error::Error>> {
-    /*let _client: Api<StatefulSet> = Api::namespaced(conn_client, NAMESPACE);
-    let _params = &DeleteParams::default();*/
-
-    // client.delete("ephemeral-roles".to_string(), params).await?;
-
     Ok(())
 }
 
 fn api_client(
     conn_client: Client,
-    object: DynamicObject,
+    object: &DynamicObject,
 ) -> Result<Api<DynamicObject>, Box<dyn error::Error>> {
     let meta: TypeMeta;
 
     match &object.types {
         Some(type_meta) => meta = type_meta.to_owned(),
-        None => return Err(Box::new(UnknownObject { object })),
+        None => {
+            return Err(Box::new(UnknownObject {
+                object: object.to_owned(),
+            }))
+        }
     }
 
     let gv = GroupVersion::from_str(meta.api_version.as_str())?;
@@ -80,4 +73,50 @@ fn api_client(
     }
 
     Ok(client)
+}
+
+async fn apply(
+    client: Api<DynamicObject>,
+    component_name: &str,
+    object: DynamicObject,
+) -> Result<(), Box<dyn error::Error>> {
+    println!(
+        "Apply {}: {}",
+        component_name,
+        object.clone().types.unwrap().kind
+    );
+
+    if let Err(err) = create(&client, &object).await {
+        match err {
+            kube::Error::Api(err) => {
+                if err.code == 409 {
+                    update(&client, &object).await?;
+                }
+            }
+            _ => return Err(Box::new(err)),
+        }
+    }
+
+    Ok(())
+}
+
+async fn create(client: &Api<DynamicObject>, object: &DynamicObject) -> Result<(), kube::Error> {
+    let params = &PostParams::default();
+    client.create(params, object).await?;
+    Ok(())
+}
+
+async fn update(client: &Api<DynamicObject>, object: &DynamicObject) -> Result<(), kube::Error> {
+    let name = object
+        .meta()
+        .name
+        .to_owned()
+        .unwrap_or_else(|| "".to_string());
+    let patch = serde_json::to_value(&object)?;
+    let patch = Patch::Apply(&patch);
+    let params = PatchParams::apply("ephemeral-roles-operator");
+
+    client.patch(name.as_str(), &params, &patch).await?;
+
+    Ok(())
 }
