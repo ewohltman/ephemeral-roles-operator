@@ -10,3 +10,16 @@ spec:
       files:
         - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/namespace.yml"
         - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/service.yml"
+    ephemeral-roles-informer:
+      version: ""
+      files:
+        - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles-informer/blob/master/deployments/kubernetes/deployment.yml"
+    pod-bouncer:
+      version: ""
+      files:
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/namespace.yml"
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/service.yml"
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/serviceaccount.yml"
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/role.yml"
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/rolebinding.yml"
+        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/deployment.yml"
