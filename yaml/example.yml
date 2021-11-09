@@ -5,17 +5,17 @@ metadata:
   name: "v1.9.0"
 spec:
   components:
-    ephemeral-roles:
-      version: ""
+    - name: ephemeral-roles
+      version: "v1.0.0"
       files:
         - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/namespace.yml"
         - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/deployments/kubernetes/service.yml"
-    ephemeral-roles-informer:
-      version: ""
+    - name: ephemeral-roles-informer
+      version: "v1.1.0"
       files:
-        - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles-informer/blob/master/deployments/kubernetes/deployment.yml"
-    pod-bouncer:
-      version: ""
+        - "https://raw.githubusercontent.com/ewohltman/ephemeral-roles-informer/master/deployments/kubernetes/deployment.yml"
+    - name: pod-bouncer
+      version: "v1.2.0"
       files:
         - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/namespace.yml"
         - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/service.yml"

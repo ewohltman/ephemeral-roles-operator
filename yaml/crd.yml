@@ -24,19 +24,22 @@ spec:
               description: ERVersion spec
               properties:
                 components:
-                  additionalProperties:
+                  items:
                     properties:
                       files:
                         items:
                           type: string
                         type: array
+                      name:
+                        type: string
                       version:
                         type: string
                     required:
                       - files
+                      - name
                       - version
                     type: object
-                  type: object
+                  type: array
               required:
                 - components
               type: object

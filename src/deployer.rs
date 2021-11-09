@@ -24,13 +24,19 @@ pub async fn deploy(
     conn_client: Client,
     er_version: ephemeral_roles::ERVersion,
 ) -> Result<(), Box<dyn error::Error>> {
-    for (component_name, component) in er_version.spec.components.iter() {
+    for component in er_version.spec.components.iter() {
         for file in component.files.iter() {
             let resp = reqwest::get(file).await?.text().await?;
             let object: DynamicObject = serde_yaml::from_str(resp.as_str())?;
             let client = api_client(conn_client.clone(), &object)?;
 
-            apply(client, component_name, object).await?;
+            apply(
+                client,
+                component.name.as_str(),
+                component.version.as_str(),
+                object,
+            )
+            .await?;
         }
     }
 
@@ -78,11 +84,13 @@ fn api_client(
 async fn apply(
     client: Api<DynamicObject>,
     component_name: &str,
+    component_version: &str,
     object: DynamicObject,
 ) -> Result<(), Box<dyn error::Error>> {
     println!(
-        "Apply {}: {}",
+        "Apply {} {}: {}",
         component_name,
+        component_version,
         object.clone().types.unwrap().kind
     );
 
