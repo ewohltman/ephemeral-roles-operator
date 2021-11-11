@@ -1,11 +1,15 @@
 use crate::ephemeral_roles;
 use kube::core::params::{Patch, PatchParams, PostParams};
-use kube::core::{ApiResource, DynamicObject, GroupVersion, GroupVersionKind, TypeMeta};
+use kube::core::{ApiResource, DynamicObject, GroupVersion, GroupVersionKind};
 use kube::{Api, Client, Resource, ResourceExt};
 use std::error;
 use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
+use tokio::task::JoinHandle;
+
+pub type AsyncResult<T> = Result<T, AsyncError>;
+pub type AsyncError = Box<dyn error::Error + Send + Sync>;
 
 #[derive(Debug, Clone)]
 pub struct UnknownObject {
@@ -20,63 +24,106 @@ impl fmt::Display for UnknownObject {
     }
 }
 
+#[derive(Debug)]
+pub struct JoinErrors {
+    errors: Vec<AsyncError>,
+}
+
+impl error::Error for JoinErrors {}
+
+impl fmt::Display for JoinErrors {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut output = format!("");
+
+        for (i, error_message) in self.errors.iter().enumerate() {
+            if i == 0 {
+                output.push_str(format!("{:?}", error_message).as_str());
+                continue;
+            }
+
+            output.push_str(format!("{:?}: {:?}", output, error_message).as_str());
+        }
+
+        write!(f, "{:?}", output)
+    }
+}
+
 pub async fn deploy(
     conn_client: Client,
     er_version: ephemeral_roles::ERVersion,
-) -> Result<(), Box<dyn error::Error>> {
-    for component in er_version.spec.components.iter() {
-        for file in component.files.iter() {
-            let resp = reqwest::get(file).await?.text().await?;
-            let object: DynamicObject = serde_yaml::from_str(resp.as_str())?;
-            let client = api_client(conn_client.clone(), &object)?;
+) -> AsyncResult<()> {
+    let mut join_handles: Vec<JoinHandle<AsyncResult<()>>> = vec![];
 
-            apply(
-                client,
-                component.name.as_str(),
-                component.version.as_str(),
-                object,
-            )
-            .await?;
+    for component in er_version.spec.components.into_iter() {
+        join_handles.push(tokio::spawn(deploy_component(
+            conn_client.clone(),
+            component,
+        )));
+    }
+
+    let mut errors: Vec<AsyncError> = vec![];
+
+    for join_handle in join_handles.into_iter() {
+        if let Err(err) = join_handle.await? {
+            errors.push(err);
         }
+    }
+
+    if !errors.is_empty() {
+        return Err(Box::new(JoinErrors { errors }));
     }
 
     Ok(())
 }
 
-pub async fn remove(_conn_client: Client, _version: &str) -> Result<(), Box<dyn error::Error>> {
+pub async fn deploy_component(
+    conn_client: Client,
+    component: ephemeral_roles::Component,
+) -> AsyncResult<()> {
+    for file in component.files.iter() {
+        let resp = reqwest::get(file).await?.text().await?;
+        let object: DynamicObject = serde_yaml::from_str(resp.as_str())?;
+        let client = api_client(conn_client.clone(), &object)?;
+
+        apply(
+            client,
+            component.name.as_str(),
+            component.version.as_str(),
+            object,
+        )
+        .await?;
+    }
+
     Ok(())
 }
 
-fn api_client(
-    conn_client: Client,
-    object: &DynamicObject,
-) -> Result<Api<DynamicObject>, Box<dyn error::Error>> {
-    let meta: TypeMeta;
+pub async fn remove(
+    _conn_client: Client,
+    _er_version: ephemeral_roles::ERVersion,
+) -> AsyncResult<()> {
+    Ok(())
+}
 
-    match &object.types {
-        Some(type_meta) => meta = type_meta.to_owned(),
+fn api_client(conn_client: Client, object: &DynamicObject) -> AsyncResult<Api<DynamicObject>> {
+    let meta = match &object.types {
+        Some(meta) => meta.to_owned(),
         None => {
             return Err(Box::new(UnknownObject {
                 object: object.to_owned(),
             }))
         }
-    }
-
-    let gv = GroupVersion::from_str(meta.api_version.as_str())?;
-    let gvk = GroupVersionKind {
-        group: gv.group,
-        version: gv.version,
-        kind: meta.kind,
     };
-    let resource = ApiResource::from_gvk(&gvk);
-    let client: Api<DynamicObject>;
 
-    match object.namespace() {
-        Some(namespace) => {
-            client = Api::namespaced_with(conn_client, namespace.as_str(), &resource)
-        }
-        None => client = Api::all_with(conn_client, &resource),
-    }
+    let group_version = GroupVersion::from_str(meta.api_version.as_str())?;
+    let resource = ApiResource::from_gvk(&GroupVersionKind {
+        group: group_version.group,
+        version: group_version.version,
+        kind: meta.kind,
+    });
+    let client: Api<DynamicObject> = match object.namespace() {
+        Some(namespace) => Api::namespaced_with(conn_client, namespace.as_str(), &resource),
+        None => Api::all_with(conn_client, &resource),
+    };
 
     Ok(client)
 }
@@ -86,7 +133,7 @@ async fn apply(
     component_name: &str,
     component_version: &str,
     object: DynamicObject,
-) -> Result<(), Box<dyn error::Error>> {
+) -> AsyncResult<()> {
     println!(
         "Apply {} {}: {}",
         component_name,
@@ -125,6 +172,5 @@ async fn update(client: &Api<DynamicObject>, object: &DynamicObject) -> Result<(
     let params = PatchParams::apply("ephemeral-roles-operator");
 
     client.patch(name.as_str(), &params, &patch).await?;
-
     Ok(())
 }

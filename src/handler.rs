@@ -1,11 +1,10 @@
-use crate::{deployer, ephemeral_roles};
+use crate::{deployer, deployer::AsyncResult, ephemeral_roles};
 use kube::{api::ResourceExt, runtime::watcher::Event, Client};
-use std::error;
 
 pub async fn handle(
     conn_client: Client,
     watch_event: Event<ephemeral_roles::ERVersion>,
-) -> Result<(), Box<dyn error::Error>> {
+) -> AsyncResult<()> {
     match watch_event {
         Event::Applied(er_version) => {
             let version = er_version.name();
@@ -18,7 +17,7 @@ pub async fn handle(
             let version = er_version.name();
 
             println!("Starting ERVersion {} deletion", version);
-            deployer::remove(conn_client, er_version.name().as_str()).await?;
+            deployer::remove(conn_client, er_version).await?;
             println!("Starting ERVersion {} deletion complete", version);
         }
         Event::Restarted(_) => {}
