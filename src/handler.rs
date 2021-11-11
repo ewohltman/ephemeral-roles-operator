@@ -18,7 +18,7 @@ pub async fn handle(
 
             println!("Starting ERVersion {} deletion", version);
             deployer::remove(conn_client, er_version).await?;
-            println!("Starting ERVersion {} deletion complete", version);
+            println!("ERVersion {} deletion complete", version);
         }
         Event::Restarted(_) => {}
     }

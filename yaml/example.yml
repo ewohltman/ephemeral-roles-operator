@@ -17,7 +17,6 @@ spec:
     - name: pod-bouncer
       version: "v1.2.0"
       files:
-        - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/namespace.yml"
         - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/service.yml"
         - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/serviceaccount.yml"
         - "https://raw.githubusercontent.com/ewohltman/pod-bouncer/master/deployments/kubernetes/role.yml"
